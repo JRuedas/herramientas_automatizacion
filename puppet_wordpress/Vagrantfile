@@ -88,6 +88,10 @@ Vagrant.configure("2") do |config|
       if [ ! -d vagrant/modules/hunner-wordpress ]; then
         puppet module install hunner-wordpress --version 1.0.0 --target-dir /vagrant/modules
       fi
+
+      if [ ! -d vagrant/modules/puppet-nginx ]; then
+        puppet module install puppet-nginx --version 3.3.0 --target-dir /vagrant/modules
+      fi
   SHELL
 
   config.vm.provision "puppet" do |puppet|

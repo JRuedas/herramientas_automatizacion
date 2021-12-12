@@ -6,6 +6,8 @@ $host          = 'localhost'
 $wp_admin_user = 'jonatan'
 $wp_admin_pass = 'password'
 $wp_owner      = 'vagrant'
+$apache_port   = '8080'
+$nginx_port    = 80
 
 include blog
 
@@ -14,8 +16,8 @@ class { 'apache':
   default_vhost => false
 }
 
-apache::vhost { 'localhost':
-  port          => '80',
+apache::vhost { "${host}":
+  port          => "${apache_port}",
   docroot       => "${document_root}",
   docroot_owner => "${wp_owner}",
   docroot_group => "${wp_owner}",
@@ -60,5 +62,44 @@ class { 'wordpress':
   db_host        => "${host}",
   create_db      => false,
   create_db_user => false,
-  require => [Class['mysql::server'], Class['::php']]
+  require        => [Class['mysql::server'], Class['::php']]
+}
+
+class { 'nginx':
+  confd_purge      => true,
+  proxy_set_header => ["Host ${host}:${apache_port}"]
+}
+
+nginx::resource::server { 'reverse-proxy':
+  ensure      => present,
+  listen_port => $nginx_port,
+  server_name => ["${host}"],
+  proxy       => "http://${host}:${apache_port}",
+  owner       => "${wp_owner}",
+  group       => "${wp_owner}",
+  index_files => [],
+}
+
+nginx::resource::location { '/wp-login.php':
+  ensure        => present,
+  server        => 'reverse-proxy',
+  location      => '/wp-login.php',
+  location_deny => ['all'],
+  index_files   => []
+}
+
+nginx::resource::location { '/wp-admin.php':
+  ensure        => present,
+  server        => 'reverse-proxy',
+  location      => '/wp-admin.php',
+  location_deny => ['all'],
+  index_files   => []
+}
+
+nginx::resource::location { '/xmlrpc.php':
+  ensure        => present,
+  server        => 'reverse-proxy',
+  location      => '/xmlrpc.php',
+  location_deny => ['all'],
+  index_files   => []
 }
