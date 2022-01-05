@@ -1,5 +1,5 @@
-name 'blog'
-maintainer 'The Authors'
+name 'Wordpress blog'
+maintainer 'Jonatan Ruedas Mora'
 maintainer_email 'you@example.com'
 license 'All Rights Reserved'
 description 'Installs/Configures blog'
