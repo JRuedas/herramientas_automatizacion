@@ -1,0 +1,16 @@
+<VirtualHost *:<%= @port %>>
+
+  ServerName <%= @server_name %>
+  
+  DocumentRoot <%= @document_root %>
+
+  <Directory <%= @document_root %>>
+    Options Indexes FollowSymLinks MultiViews
+    AllowOverride None
+    Require all granted
+  </Directory>
+
+  LogLevel info
+  ErrorLog <%= @log_dir %>/<%= @site_name %>-error.log
+  CustomLog <%= @log_dir %>/<%= @site_name %>-access.log combined
+</VirtualHost>

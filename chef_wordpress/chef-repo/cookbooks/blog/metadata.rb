@@ -1,8 +1,8 @@
 name 'blog'
-maintainer 'The Authors'
-maintainer_email 'you@example.com'
+maintainer 'Jonatan Ruedas Mora'
+maintainer_email 'jonatan@example.com'
 license 'All Rights Reserved'
-description 'Installs/Configures blog'
+description 'Installs/Configures a wordpress blog with 2 posts'
 version '0.1.0'
 chef_version '>= 16.0'
 
@@ -17,3 +17,6 @@ chef_version '>= 16.0'
 # a Supermarket.
 #
 # source_url 'https://github.com/<insert_org_here>/blog'
+
+depends 'apache2'
+depends 'php'
