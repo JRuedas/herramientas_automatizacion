@@ -20,3 +20,4 @@ chef_version '>= 16.0'
 
 depends 'apache2'
 depends 'php'
+depends 'mysql'

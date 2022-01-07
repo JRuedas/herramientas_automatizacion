@@ -8,6 +8,8 @@ document_root = '/var/www/html'
 apache_port   = '8080'
 host          = 'localhost'
 
+############## Apache ##############
+
 apache2_install 'default' do
     mpm 'prefork'
     listen [ apache_port ]
@@ -58,3 +60,36 @@ apache2_mod_php
 file "#{document_root}/info.php" do
     content "<?php\nphpinfo();\n?>"
 end
+
+############## PHP ##############
+
+## TODO: Not necessary because Apache PHP mod installs PHP
+
+############## MySQL ##############
+
+mysql_service 'default' do
+    version '8.0'
+    action [:create, :start]
+end
+
+mysql_client 'default' do
+    action :create
+end
+
+mysql_database 'default' do
+    host 'localhost'
+    database_name 'wordpress'
+    action :create
+end
+  
+mysql_user 'default' do
+    username 'wpuser'
+    password 'wppass'
+    database_name 'wordpress'
+    host 'localhost'
+    privileges [:all]
+    grant_option true
+    action [:create,:grant]
+end
+
+############## Wordpress ##############

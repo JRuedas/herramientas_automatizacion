@@ -4,3 +4,4 @@ metadata
 
 cookbook 'apache2', '~> 8.14.1'
 cookbook 'php', '~> 9.1.0'
+cookbook 'mysql', '~> 11.0.0'
