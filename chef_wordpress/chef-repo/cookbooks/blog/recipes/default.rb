@@ -63,7 +63,6 @@ file "#{document_root}/index.html" do
 end
 
 apache2_mod_php
-apache2_module "rewrite"
 
 file "#{document_root}/info.php" do
     content "<?php\nphpinfo();\n?>"
