@@ -9,5 +9,4 @@ end
 if platform_family?('rhel')
     package 'php-mysqlnd'
     package 'php-json'
-    package 'php-gd'
 end
