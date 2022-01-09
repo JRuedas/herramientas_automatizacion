@@ -47,10 +47,6 @@ end
 
 apache2_mod_php
 
-file "#{node['blog']['document_root']}/info.php" do
-    content "<?php\nphpinfo();\n?>"
-end
-
 ############## Firewall & SELinux ##############
 
 if platform_family?('rhel')
