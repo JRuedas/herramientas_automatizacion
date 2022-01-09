@@ -1,6 +1,6 @@
 default['blog']['document_root'] = '/var/www/html'
 default['blog']['apache_port'] = '8080'
-default['blog']['myslq_port'] = '3306'
+default['blog']['mysql_port'] = '3306'
 default['blog']['mysql_version'] = '8.0'
 default['blog']['wp_version'] = '5.7'
 default['blog']['wp_owner'] = 'vagrant'

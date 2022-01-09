@@ -51,23 +51,21 @@ file "#{node['blog']['document_root']}/info.php" do
     content "<?php\nphpinfo();\n?>"
 end
 
-############## Firewall ##############
+############## Firewall & SELinux ##############
 
 if platform_family?('rhel')
     execute 'Add HTPP firewall rule' do
         command "sudo firewall-cmd --permanent --zone=public --add-port=#{node['blog']['apache_port']}/tcp"
     end
+
     execute 'Add MySQL firewall rule' do
         command "sudo firewall-cmd --permanent --zone=public --add-port=#{node['blog']['mysql_port']}/tcp"
     end
+    
     execute 'Reload firewall rules' do
         command "sudo firewall-cmd --reload"
     end
-end
 
-############## SELinux ##############
-
-if platform_family?('rhel')
     execute 'Add SELinux rule to allow MySQL connections' do
         command "sudo setsebool -P httpd_can_network_connect_db 1"
     end
