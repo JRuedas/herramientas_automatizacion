@@ -4,7 +4,7 @@
 # https://docs.chef.io/policyfile/
 
 # A name that describes what the system you're building with Chef does.
-name 'Chef Wordpress test'
+name 'Chef_Wordpress_test'
 
 # Where to find external cookbooks:
 default_source :supermarket
