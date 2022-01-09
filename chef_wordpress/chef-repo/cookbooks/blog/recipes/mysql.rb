@@ -1,13 +1,5 @@
 ############## MySQL ##############
 
-if platform_family?('rhel')
-    yum_mysql_community_repo 'default' do
-        version node['blog']['mysql_version']
-        gpgcheck true
-        mysql_community_server true
-    end
-end  
-
 if platform_family?('debian')
     mysql_service 'default' do
         version node['blog']['mysql_version']
@@ -36,6 +28,12 @@ if platform_family?('debian')
 end  
 
 if platform_family?('rhel')
+    yum_mysql_community_repo 'default' do
+        version node['blog']['mysql_version']
+        gpgcheck true
+        mysql_community_server true
+    end
+
     mysql_service 'default' do
         version node['mysql']['version']
         initial_root_password 'root'
