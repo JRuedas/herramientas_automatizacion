@@ -5,17 +5,22 @@
 # Copyright:: 2022, The Authors, All Rights Reserved.
 
 document_root = '/var/www/html'
-apache_port   = '80'
-host          = 'localhost'
-db_name = 'wordpress'
-wp_owner = 'vagrant'
+apache_port   = '8080'
+mysql_port    = '3306'
+mysql_version = '8.0'
+wp_version    = '5.7'
+wp_owner      = 'vagrant'
+wp_host       = 'localhost'
+db_name       = 'wordpress'
+db_user       = 'wpuser'
+db_pass       = 'wppass'
 
 ############## Apache ##############
 
 apache2_install 'default' do
     mpm 'prefork'
-    apache_user 'vagrant'
-    apache_group 'vagrant'
+    apache_user wp_owner
+    apache_group wp_owner
     listen [ apache_port ]
 end
 
@@ -26,16 +31,14 @@ service 'apache2' do
 end
 
 apache2_default_site 'localhost' do
-    default_site_name host
+    default_site_name wp_host
     site_action :enable
     template_cookbook 'blog'
     template_source 'virtual-hosts.conf.erb'
     port apache_port
     variables(
-      server_name: host,
-      document_root: document_root,
-      log_dir: lazy { default_log_dir },
-      site_name: host
+      server_name: wp_host,
+      document_root: document_root
     )
 end
 
@@ -60,6 +63,7 @@ file "#{document_root}/index.html" do
 end
 
 apache2_mod_php
+apache2_module "rewrite"
 
 file "#{document_root}/info.php" do
     content "<?php\nphpinfo();\n?>"
@@ -69,10 +73,10 @@ end
 
 if platform_family?('rhel')
     execute 'Add HTPP firewall rule' do
-        command "sudo firewall-cmd --permanent --zone=public --add-port=80/tcp"
+        command "sudo firewall-cmd --permanent --zone=public --add-port=#{apache_port}/tcp"
     end
     execute 'Add MySQL firewall rule' do
-        command "sudo firewall-cmd --permanent --zone=public --add-port=3306/tcp"
+        command "sudo firewall-cmd --permanent --zone=public --add-port=#{mysql_port}/tcp"
     end
     execute 'Reload firewall rules' do
         command "sudo firewall-cmd --reload"
@@ -93,98 +97,98 @@ end
 
 if platform_family?('debian')
     package 'php-mysqli'
+    package 'php-curl'
+    package 'php-gd'
+    package 'php-mbstring'
+    package 'php-xml'
+    package 'php-xmlrpc'
+    package 'php-soap'
+    package 'php-intl'
+    package 'php-zip'
 end
 
 if platform_family?('rhel')
     package 'php-mysqlnd'
     package 'php-json'
+    package 'php-gd'
 end
 
 ############## MySQL ##############
 
 if platform_family?('rhel')
     yum_mysql_community_repo 'default' do
-        version '8.0'
+        version mysql_version
         gpgcheck true
         mysql_community_server true
     end
 end  
 
-mysql_service 'default' do
-    version '8.0'
-    initial_root_password 'root'
-    action [:create, :start]
-end
+if platform_family?('debian')
+    mysql_service 'default' do
+        version mysql_version
+        action [:create, :start]
+    end
 
-mysql_client 'default' do
-    action :create
-end
+    mysql_client 'default' do
+        action :create
+    end
 
-# mysql_config 'default' do
-#     source 'security_stuff.cnf.erb'
-#     variables(:foo => 'bar')
-#     action :create
-#     notifies :restart, 'mysql_service[default]'
-# end
+    mysql_database 'default' do
+        host wp_host
+        database_name db_name
+        action :create
+    end
+      
+    mysql_user 'default' do
+        username db_user
+        password db_pass
+        database_name db_name
+        host wp_host
+        privileges [:all]
+        grant_option true
+        action [:create,:grant]
+    end
+end  
 
-# cookbook_file "/tmp/disable_root_auth_socket.sql" do
-#     source 'disable_root_auth_socket.sql'
-#     not_if do
-#         File.exist?("/tmp/disable_root_auth_socket.sql")
-#     end
-# end
+if platform_family?('rhel')
+    mysql_service 'default' do
+        version mysql_version
+        initial_root_password 'root'
+        action [:create, :start]
+    end
 
-# execute "enable native password mysql auth" do
-#     command "mysql -u root -proot < /tmp/disable_root_auth_socket.sql"
-#     user "root"
-# end
+    mysql_client 'default' do
+        action :create
+    end
 
-mysql_database 'default' do
-    host 'localhost'
-    user 'root'
-    password 'root'
-    database_name 'wordpress'
-    action :create
-end
-  
-mysql_user 'default' do
-    ctrl_user 'root'
-    ctrl_password 'root'
-    username 'wpuser'
-    password 'wppass'
-    database_name 'wordpress'
-    host 'localhost'
-    privileges [:all]
-    grant_option true
-    action [:create,:grant]
-end
-
-############## Wordpress ##############
-
-bash 'install wordpress' do
-    cwd '/tmp'
-    code <<-EOH
-    curl -O https://wordpress.org/wordpress-5.7.tar.gz
-    tar xzvf wordpress-5.7.tar.gz
-    cp ./wordpress/wp-config-sample.php ./wordpress/wp-config.php
-    sudo cp -a ./wordpress/. /var/www/html
-    EOH
-end
-
-file '/var/www/html/wp-config.php' do
-    action :delete
-end
-
-cookbook_file "#{document_root}/wp-config.php" do
-    source 'wp-config.php'
-    not_if do
-        File.exist?("#{document_root}/wp-config.php")
+    mysql_database 'default' do
+        host wp_host
+        user 'root'
+        password 'root'
+        database_name db_name
+        action :create
+    end
+      
+    mysql_user 'default' do
+        ctrl_user 'root'
+        ctrl_password 'root'
+        username db_user
+        password db_pass
+        database_name db_name
+        host wp_host
+        privileges [:all]
+        grant_option true
+        action [:create,:grant]
     end
 end
 
 ############## Wordpress CLI ##############
 
-bash 'install wordpress cli' do
+execute 'change owner and group' do
+    command "sudo chown -R #{wp_owner}:#{wp_owner} #{document_root}"
+end
+
+bash 'Install Wordpress CLI' do
     cwd '/tmp'
     code <<-EOH
     curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
@@ -193,10 +197,18 @@ bash 'install wordpress cli' do
     EOH
 end
 
-execute 'configure wordpress' do
-    command "sudo -u #{wp_owner} -i -- wp core install --path=#{document_root} --url=http://localhost:80 --title=Test --admin_name=jonatan --admin_password=password --admin_email=jonatan@example.com"
+execute 'Download Wordpress' do
+    command "sudo -u #{wp_owner} -i -- wp core download --path=#{document_root} --version=#{wp_version}"
 end
 
-execute 'configure wordpress' do
+execute 'Create Wordpress configuration' do
+    command "sudo -u #{wp_owner} -i -- wp config create --path=#{document_root} --dbname=#{db_name} --dbuser=#{db_user} --dbpass=#{db_pass}"
+end
+
+execute 'Wordpress initial setup' do
+    command "sudo -u #{wp_owner} -i -- wp core install --path=#{document_root} --url=http://#{wp_host}:#{apache_port} --title=Test --admin_name=jonatan --admin_password=password --admin_email=jonatan@example.com"
+end
+
+execute 'Add post' do
     command "sudo -u #{wp_owner} -i -- wp post create --path=#{document_root} --post_type=post --post_title='First post' --post_author='1' --post_content='Finally working!' --post_status=publish"
 end
