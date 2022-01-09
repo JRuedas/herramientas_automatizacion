@@ -1,5 +1,5 @@
 name 'blog'
-maintainer 'Grupo del Master'
+maintainer 'Grupo del Master DevOps'
 maintainer_email 'maintainer@example.com'
 license 'All Rights Reserved'
 description 'Installs/Configures a wordpress blog with 2 posts'
