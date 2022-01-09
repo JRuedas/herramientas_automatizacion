@@ -189,15 +189,15 @@ bash 'Install Wordpress CLI' do
 end
 
 execute 'Download Wordpress' do
-    command "sudo -u #{wp_owner} -i -- wp core download --path=#{document_root} --version=#{wp_version}"
+    command "sudo -u #{wp_owner} -i -- wp core download --path=#{document_root} --version=#{wp_version} --force"
 end
 
 execute 'Create Wordpress configuration' do
-    command "sudo -u #{wp_owner} -i -- wp config create --path=#{document_root} --dbname=#{db_name} --dbuser=#{db_user} --dbpass=#{db_pass}"
+    command "sudo -u #{wp_owner} -i -- wp config create --path=#{document_root} --dbname=#{db_name} --dbuser=#{db_user} --dbpass=#{db_pass} --dbhost=127.0.0.1" # Not localhost because of a bug in MySQL cookbook
 end
 
 execute 'Wordpress initial setup' do
-    command "sudo -u #{wp_owner} -i -- wp core install --path=#{document_root} --url=http://#{wp_host}:#{apache_port} --title=Test --admin_name=jonatan --admin_password=password --admin_email=jonatan@example.com"
+    command "sudo -u #{wp_owner} -i -- wp core install --path=#{document_root} --url=http://#{wp_host}:#{apache_port} --title=Test --admin_name=admin --admin_password=password --admin_email=admin@example.com"
 end
 
 execute 'Add post' do
