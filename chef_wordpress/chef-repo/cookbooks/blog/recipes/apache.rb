@@ -52,14 +52,17 @@ apache2_mod_php
 if platform_family?('rhel')
     execute 'Add HTPP firewall rule' do
         command "sudo firewall-cmd --permanent --zone=public --add-port=#{node['blog']['apache_port']}/tcp"
+        ignore_failure true
     end
 
     execute 'Add MySQL firewall rule' do
         command "sudo firewall-cmd --permanent --zone=public --add-port=#{node['blog']['mysql_port']}/tcp"
+        ignore_failure true
     end
     
     execute 'Reload firewall rules' do
         command "sudo firewall-cmd --reload"
+        ignore_failure true
     end
 
     execute 'Add SELinux rule to allow MySQL connections' do
