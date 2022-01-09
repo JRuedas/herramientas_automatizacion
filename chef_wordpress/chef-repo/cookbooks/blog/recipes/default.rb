@@ -96,14 +96,6 @@ end
 
 if platform_family?('debian')
     package 'php-mysqli'
-    package 'php-curl'
-    package 'php-gd'
-    package 'php-mbstring'
-    package 'php-xml'
-    package 'php-xmlrpc'
-    package 'php-soap'
-    package 'php-intl'
-    package 'php-zip'
 end
 
 if platform_family?('rhel')
