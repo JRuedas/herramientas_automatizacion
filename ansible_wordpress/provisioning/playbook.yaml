@@ -1,0 +1,102 @@
+---
+- hosts: all
+  become: true
+  vars_files:
+    - vars/default.yaml
+  tasks:
+## Apache configuration
+    - name: Install Apache
+      include_role:
+        name: weareinteractive.apache2
+    - name: Change site folder owner
+      file:
+        path: "/var/www/books"
+        state: directory
+        recurse: yes
+        owner: "{{ wp_owner }}"
+        group: "{{ wp_owner }}"
+        mode: '0755'
+## PHP configuration
+    - name: Install PHP
+      apt:
+        state: present
+        update_cache: yes
+        name: 
+          - php
+          - php-mysql
+          - php-fpm
+          - php-xml
+          - libapache2-mod-php
+## MySQL configuration
+    - name: Install MySQL
+      apt:
+        state: present
+        name:
+          - mysql-server
+          - python3-mysqldb
+    - name: Generate new MySQL root password
+      command: 
+        cmd: openssl rand -hex 7
+        creates: /root/.my.cnf
+      register: mysql_new_root_pass
+    - name: Remove MySQL anonymous users
+      mysql_user:
+        name: ''
+        host_all: yes
+        state: absent
+      when: mysql_new_root_pass.changed
+    - name: Remove MySQL test database
+      mysql_db:
+        name: test
+        state: absent
+      when: mysql_new_root_pass.changed
+    - name: Update MySQL root password
+      mysql_user:
+        name: root
+        host: "{{ item }}"
+        password: "{{ mysql_new_root_pass.stdout }}"
+      loop:
+        - "{{ansible_hostname}}"
+        - 127.0.0.1
+        - ::1
+        - localhost
+      when: mysql_new_root_pass.changed
+    - name: Output new MySQL root password
+      debug:
+        msg: "New root password is {{mysql_new_root_pass.stdout}}"
+      when: mysql_new_root_pass.changed
+    - name: Create MySQL my.cnf file
+      template:
+        src: templates/mysql/my.cnf
+        dest: /root/.my.cnf
+      when: mysql_new_root_pass.changed
+    - name: Create MySQL wordpress database
+      mysql_db:
+        name: "{{ mysql_db }}"
+        state: present
+    - name: Create MySQL wordpress db user
+      mysql_user:
+        name: "{{ mysql_user }}"
+        password: "{{ mysql_pass }}"
+        priv: wordpress.*:ALL
+        state: present
+## Nginx configuration
+
+## Wordpress configuration
+    - name: Download wp-cli
+      get_url:
+        url: https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+        dest: /usr/bin/wp
+        mode: 0755
+    - name: Download Wordpress
+      command: 
+        cmd: "sudo -u {{ wp_owner }} -i -- wp core download --path={{ document_root }} --version={{ wp_version }} --force"
+    - name: Configure Wordpress
+      command: 
+        cmd: "sudo -u {{ wp_owner }} -i -- wp config create --path={{ document_root }} --dbname={{ mysql_db }} --dbuser={{ mysql_user }} --dbpass={{ mysql_pass }} --dbhost=localhost"
+    - name: Wordpress initial setup
+      command: 
+        cmd: "sudo -u {{ wp_owner }} -i -- wp core install --path={{ document_root }} --url=http://{{ apache2_sites[0].name }}:{{ apache2_ports[0] }} --title=Test --admin_name={{ wp_admin_name }} --admin_password={{ wp_admin_pass }} --admin_email={{ wp_admin_name }}@example.com"
+    - name: Create Wordpress post
+      command: 
+        cmd: "sudo -u {{ wp_owner }} -i -- wp post create --path={{ document_root }} --post_type=post --post_title='First post' --post_author='1' --post_content='Finally working!' --post_status=publish"
