@@ -16,3 +16,5 @@ wp_owner: vagrant
 wp_version: 5.7
 wp_admin_name: admin
 wp_admin_pass: pass
+
+nginx_port: 80

@@ -1,0 +1,27 @@
+server {
+  listen *:{{ nginx_port }};
+  server_name {{apache2_sites[0].name}};
+
+  location / {
+    proxy_pass            http://{{apache2_sites[0].name}}:{{apache2_ports[0]}};
+    proxy_read_timeout    90s;
+    proxy_connect_timeout 90s;
+    proxy_send_timeout    90s;
+    proxy_set_header      Host {{apache2_sites[0].name}}:{{apache2_ports[0]}};
+  }
+
+  location ~ ^/xmlrpc.php {
+    deny all;
+  }
+
+  location ~ ^/wp-admin.php {
+    deny all;
+  }
+
+  location ~ ^/wp-login.php {
+    deny all;
+  }
+
+  access_log            /var/log/nginx/reverse-proxy.access.log;
+  error_log             /var/log/nginx/reverse-proxy.error.log;
+}

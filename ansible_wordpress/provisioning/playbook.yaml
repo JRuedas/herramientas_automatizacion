@@ -81,7 +81,29 @@
         priv: wordpress.*:ALL
         state: present
 ## Nginx configuration
-
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+    - name: Start nginx
+      service:
+        name: nginx
+        state: started
+    - name: Create Nginx config
+      template:
+        src: templates/nginx/reverse-proxy-books
+        dest: /etc/nginx/sites-available/reverse-proxy-books
+    - name: Disable Nginx default site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: restart nginx
+    - name: Enable Nginx site
+      file:
+        src: /etc/nginx/sites-available/reverse-proxy-books
+        dest: /etc/nginx/sites-enabled/reverse-proxy-books
+        state: link
+      notify: restart nginx
 ## Wordpress configuration
     - name: Download wp-cli
       get_url:
@@ -100,3 +122,9 @@
     - name: Create Wordpress post
       command: 
         cmd: "sudo -u {{ wp_owner }} -i -- wp post create --path={{ document_root }} --post_type=post --post_title='First post' --post_author='1' --post_content='Finally working!' --post_status=publish"
+  handlers:
+    - name: restart nginx
+      become: true
+      service:
+        name: nginx
+        state: restarted
