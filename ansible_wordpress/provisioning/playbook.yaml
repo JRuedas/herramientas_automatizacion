@@ -80,6 +80,13 @@
         password: "{{ mysql_pass }}"
         priv: wordpress.*:ALL
         state: present
+## Domain host configuration
+    - name: Add books domain to /etc/hosts
+      become: true
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^127.0.0.1       localhost$'
+        line: "127.0.0.1       localhost {{ apache2_sites[0].name }}"
 ## Nginx configuration
     - name: Install Nginx
       apt:
